@@ -34,7 +34,7 @@ Super Admin makes the final call.
 |---|---|
 | Frontend | React 19, Vite, Tailwind CSS v4, Recharts, React Router |
 | Backend | Python, FastAPI |
-| Database | SQLite via SQLAlchemy (`data/platform.db`); business data in `data/ecommerce.db` |
+| Database | SQLAlchemy: SQLite locally (`data/platform.db`), Postgres in production (`DATABASE_URL`); demo business data in `data/ecommerce.db` |
 | Auth | Email + password, JWT (scrypt hashing) — isolated in `backend/security.py` so it can be swapped for Supabase / Firebase Auth |
 | AI | Rule-based agent + RAG (offline). Optional Claude / OpenAI for answer-writing via env var |
 
@@ -49,9 +49,27 @@ uvicorn backend.main:api --port 8000    # terminal 1  (creates platform.db + sup
 cd frontend && npm install && npm run dev   # terminal 2  -> http://localhost:5173
 ```
 
-**Super Admin login (dev default):** `superadmin@nexusai.in` / `Nexus@12345`
-Override with env vars `NEXUS_ADMIN_EMAIL`, `NEXUS_ADMIN_PASSWORD` and set
-`NEXUS_SECRET_KEY` (JWT signing) before any real deployment.
+**Super Admin login (local dev only):** `superadmin@nexusai.in` with the dev default password from
+`backend/config.py`. In production (`NEXUS_ENV=production`) the app refuses to start unless
+`DATABASE_URL`, `NEXUS_SECRET_KEY` and `NEXUS_ADMIN_PASSWORD` are set.
+
+## Deploy on Render (free)
+
+`render.yaml` is a Render Blueprint that creates three things, already wired together:
+`nexus-ai-api` (FastAPI), `nexus-ai-web` (the React site) and `nexus-ai-db` (Postgres).
+
+1. Render Dashboard -> **New** -> **Blueprint** -> connect GitHub -> pick this repo -> **Apply**.
+2. When asked, enter `NEXUS_ADMIN_PASSWORD` (the Super Admin password, 10+ characters). The JWT secret is generated automatically and the database URL is filled in by Render.
+3. Open `https://nexus-ai-web.onrender.com` and sign in as `superadmin@nexusai.in`.
+
+If Render gives a service a different address (e.g. the name was taken), set
+`VITE_API_URL` on `nexus-ai-web` to the API's address and `CORS_ORIGINS` on
+`nexus-ai-api` to the site's address, then redeploy both.
+
+Free-tier notes: the API sleeps after 15 idle minutes, so the first request afterwards takes up to a
+minute. Data lives in Postgres, so it survives sleeps and redeploys. **Render's free Postgres expires
+30 days after creation** — before that, upgrade it or point `DATABASE_URL` at another Postgres
+(Neon / Supabase). Logos and letters are stored in the database, not on disk.
 
 ### Demo script
 1. **Register a company** at `/register` (3 steps: company details -> MD & documents -> data access & admin account). Use a valid-format GSTIN/PAN/CIN, e.g. `29ABCDE1234F1Z5` / `ABCDE1234F` / `U74999KA2015PTC123456`; a logo (PNG/JPG/WebP) and any PDF as the letter.
@@ -80,7 +98,7 @@ data/                generate_data.py, docs/ (RAG knowledge base)
 ## Security notes
 - Passwords: scrypt with per-user salt. Sessions: signed JWT, 12h expiry.
 - Every endpoint checks role **and** company approval on the server; the UI guards are only UX.
-- Uploads: extension + size (5 MB) + magic-byte checks; SVG logos refused (script risk); the authorization letter is downloadable only by the Super Admin.
+- Uploads: extension + size (5 MB) + magic-byte checks; SVG logos refused (script risk); stored in the database. The authorization letter is downloadable only by the Super Admin; logo URLs carry an HMAC signature so they can't be enumerated.
 - Not yet: login rate-limiting, email verification, password reset (would come with Supabase Auth).
 
 ## Roadmap

@@ -8,7 +8,11 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-const client = axios.create({ baseURL: "/api" });
+// Empty in local dev (Vite proxies /api); the deployed backend's origin in production builds.
+export const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+export const apiUrl = (path) => `${API_ORIGIN}${path}`;
+
+const client = axios.create({ baseURL: `${API_ORIGIN}/api` });
 
 client.interceptors.request.use((cfg) => {
   const t = tokenStore.get();
