@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { apiUrl } from "../api";
 
 export function Field({ label, hint, error, children }) {
   return (
@@ -55,7 +56,7 @@ export function StatusPill({ status }) {
 
 export function CompanyLogo({ company, size = 40 }) {
   return company?.logo_url ? (
-    <img src={company.logo_url} alt="" style={{ width: size, height: size }} className="rounded-xl object-contain bg-white border border-[var(--border)] shrink-0" />
+    <img src={apiUrl(company.logo_url)} alt="" style={{ width: size, height: size }} className="rounded-xl object-contain bg-white border border-[var(--border)] shrink-0" />
   ) : (
     <span style={{ width: size, height: size }} className="grid place-items-center rounded-xl bg-[var(--series-1)]/10 text-[var(--series-1)] font-bold shrink-0">
       {company?.name?.[0] ?? "?"}

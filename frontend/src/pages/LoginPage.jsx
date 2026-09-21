@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { errorMessage } from "../api";
 import { homePathFor, useAuth } from "../auth/AuthContext";
@@ -12,6 +12,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!busy) return setSlow(false);
+    const t = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, [busy]);
 
   if (user) return <Navigate to={homePathFor(user)} replace />;
 
@@ -44,6 +51,11 @@ export default function LoginPage() {
         </Field>
         {error && <div className="rounded-xl bg-[var(--status-critical-bg)] text-[var(--status-critical)] text-sm px-3.5 py-2.5">{error}</div>}
         <Button type="submit" loading={busy} className="w-full">Sign in</Button>
+        {slow && (
+          <p className="text-[12.5px] text-center text-[var(--ink-secondary)]">
+            Waking up the server — the free host sleeps when idle, so the first sign-in can take up to a minute.
+          </p>
+        )}
       </form>
       <p className="text-sm text-[var(--ink-secondary)] mt-6 text-center">
         Is your company new to Nexus AI?{" "}

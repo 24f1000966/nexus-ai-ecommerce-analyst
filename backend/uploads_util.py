@@ -1,4 +1,3 @@
-import uuid
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
@@ -13,9 +12,11 @@ _MAGIC = {
     ".pdf": lambda b: b.startswith(b"%PDF"),
 }
 
+MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".pdf": "application/pdf"}
+
 
 async def read_validated(file: UploadFile, allowed: set[str], label: str) -> tuple[bytes, str]:
-    """Return (bytes, extension) after checking size, extension and magic bytes."""
+    """Return (bytes, mime type) after checking size, extension and magic bytes."""
     ext = Path(file.filename or "").suffix.lower()
     if ext not in allowed:
         raise HTTPException(422, f"{label}: allowed file types are {', '.join(sorted(allowed))}")
@@ -24,10 +25,4 @@ async def read_validated(file: UploadFile, allowed: set[str], label: str) -> tup
         raise HTTPException(422, f"{label}: file must be under {MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
     if not data or not _MAGIC[ext](data):
         raise HTTPException(422, f"{label}: file content does not match its type")
-    return data, ext
-
-
-def save_bytes(data: bytes, ext: str, directory: Path) -> str:
-    name = f"{uuid.uuid4().hex}{ext}"
-    (directory / name).write_bytes(data)
-    return name
+    return data, MIME[ext]

@@ -6,6 +6,7 @@ uvicorn[standard]
 sqlalchemy
 pyjwt
 python-multipart
+psycopg[binary]
 # Optional — only needed once you plug in a real LLM key:
 # anthropic
 # openai

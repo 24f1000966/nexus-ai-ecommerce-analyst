@@ -8,17 +8,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import hmac
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
 
 from app import agent, db as analytics_db, llm_backend
 from backend import models
-from backend.config import LOGO_DIR, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
-from backend.database import Base, SessionLocal, engine
+from backend.config import CORS_ORIGINS, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
+from backend.database import Base, SessionLocal, engine, get_db
+from backend.migrate_local import upgrade_sqlite
 from backend.routers import admin, auth, company
+from backend.schemas import logo_signature
 from backend.security import hash_password, require_approved_user
 
 
@@ -34,6 +39,7 @@ def seed_super_admin():
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    upgrade_sqlite(engine)
     Base.metadata.create_all(engine)
     seed_super_admin()
     yield
@@ -43,12 +49,11 @@ api = FastAPI(title="Nexus AI API", lifespan=lifespan)
 
 api.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-api.mount("/uploads/logos", StaticFiles(directory=LOGO_DIR), name="logos")
 api.include_router(auth.router)
 api.include_router(admin.router)
 api.include_router(company.router)
@@ -64,6 +69,24 @@ SAMPLE_GROUPS = {
 
 class AskRequest(BaseModel):
     question: str
+
+
+@api.get("/api/health")
+def health(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+    return {"ok": True}
+
+
+@api.get("/api/companies/{company_id}/logo")
+def company_logo(company_id: int, sig: str = "", db: Session = Depends(get_db)):
+    if not hmac.compare_digest(sig, logo_signature(company_id)):
+        raise HTTPException(404, "Not found")
+    row = db.execute(select(models.Company.logo_data, models.Company.logo_mime)
+                     .where(models.Company.id == company_id)).first()
+    if not row or not row.logo_data:
+        raise HTTPException(404, "Not found")
+    return Response(row.logo_data, media_type=row.logo_mime,
+                    headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"})
 
 
 # --- Analytics (any approved company user). Phase 3 will scope these per company. ---

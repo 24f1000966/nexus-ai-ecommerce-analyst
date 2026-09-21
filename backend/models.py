@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -24,8 +24,10 @@ class Company(Base):
     md_email: Mapped[str] = mapped_column(String(200), default="")
     data_types: Mapped[str] = mapped_column(String(300), default="")
     data_purpose: Mapped[str] = mapped_column(Text, default="")
-    logo_file: Mapped[str] = mapped_column(String(200), default="")
-    letter_file: Mapped[str] = mapped_column(String(200), default="")
+    # Files live in the database so they survive hosts with ephemeral disks (e.g. Render free tier).
+    logo_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
+    logo_mime: Mapped[str] = mapped_column(String(40), default="")
+    letter_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|approved|rejected|suspended
     status_note: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

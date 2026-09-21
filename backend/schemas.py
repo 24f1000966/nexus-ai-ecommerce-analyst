@@ -1,4 +1,14 @@
+import hashlib
+import hmac
+
+from backend.config import SECRET_KEY
 from backend.models import Company, User
+
+
+def logo_signature(company_id: int) -> str:
+    # <img> tags can't send the auth header, so logo URLs carry a signature instead;
+    # only users who were handed the URL by an authenticated API response can load it.
+    return hmac.new(SECRET_KEY.encode(), f"logo:{company_id}".encode(), hashlib.sha256).hexdigest()[:32]
 
 
 def company_public(c: Company) -> dict:
@@ -7,11 +17,11 @@ def company_public(c: Company) -> dict:
         "name": c.name,
         "status": c.status,
         "status_note": c.status_note,
-        "logo_url": f"/uploads/logos/{c.logo_file}" if c.logo_file else None,
+        "logo_url": f"/api/companies/{c.id}/logo?sig={logo_signature(c.id)}" if c.logo_mime else None,
     }
 
 
-def company_detail(c: Company) -> dict:
+def company_detail(c: Company, has_letter: bool) -> dict:
     return {
         **company_public(c),
         "website": c.website,
@@ -23,7 +33,7 @@ def company_detail(c: Company) -> dict:
         "md_email": c.md_email,
         "data_types": [t for t in c.data_types.split(",") if t],
         "data_purpose": c.data_purpose,
-        "has_letter": bool(c.letter_file),
+        "has_letter": has_letter,
         "created_at": c.created_at.isoformat(),
         "reviewed_at": c.reviewed_at.isoformat() if c.reviewed_at else None,
     }

@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from backend.config import DOC_DIR
 from backend.database import get_db
 from backend.models import AuditLog, Company, User
 from backend.schemas import company_detail, company_public, user_public
@@ -25,6 +24,10 @@ def _get_company(db: Session, company_id: int) -> Company:
     if not company:
         raise HTTPException(404, "Company not found")
     return company
+
+
+def _has_letter(db: Session, company_id: int) -> bool:
+    return bool(db.scalar(select(Company.letter_data.isnot(None)).where(Company.id == company_id)))
 
 
 def _applicant(db: Session, company_id: int) -> User | None:
@@ -60,7 +63,7 @@ def company_review(company_id: int, db: Session = Depends(get_db), _: User = Dep
     members = db.scalars(select(User).where(User.company_id == company_id)).all()
     log = db.scalars(select(AuditLog).where(AuditLog.company_id == company_id).order_by(AuditLog.created_at.desc())).all()
     return {
-        "company": company_detail(company),
+        "company": company_detail(company, has_letter=_has_letter(db, company_id)),
         "applicant": user_public(applicant) if applicant else None,
         "checks": verification_checks(company, applicant.email if applicant else ""),
         "member_count": len(members),
@@ -71,10 +74,10 @@ def company_review(company_id: int, db: Session = Depends(get_db), _: User = Dep
 @router.get("/companies/{company_id}/letter")
 def download_letter(company_id: int, db: Session = Depends(get_db), _: User = Depends(require_super_admin)):
     company = _get_company(db, company_id)
-    path = DOC_DIR / company.letter_file
-    if not company.letter_file or not path.exists():
+    if not company.letter_data:
         raise HTTPException(404, "No letter on file")
-    return FileResponse(path, media_type="application/pdf", filename=f"{company.name}-authorization-letter.pdf")
+    return Response(company.letter_data, media_type="application/pdf",
+                    headers={"Content-Disposition": 'inline; filename="authorization-letter.pdf"'})
 
 
 def _decide(db: Session, company_id: int, admin: User, new_status: str, action: str, reason: str, allowed_from: set[str]):

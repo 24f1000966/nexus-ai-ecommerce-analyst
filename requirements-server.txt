@@ -1,0 +1,8 @@
+# Minimal dependencies for the deployed API (no Streamlit/matplotlib).
+fastapi
+uvicorn[standard]
+sqlalchemy
+pyjwt
+python-multipart
+pandas
+psycopg[binary]

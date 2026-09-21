@@ -5,12 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from backend.config import DOC_DIR, LOGO_DIR
 from backend.database import get_db
 from backend.models import AuditLog, Company, User
 from backend.schemas import user_public
 from backend.security import create_token, get_current_user, hash_password, verify_password
-from backend.uploads_util import read_validated, save_bytes
+from backend.uploads_util import read_validated
 from backend.verification import CIN_RE, GSTIN_RE, PAN_RE
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -67,15 +66,14 @@ async def register_company(
     if db.scalar(select(Company).where(func.upper(Company.gstin) == gstin, Company.status != "rejected")):
         raise HTTPException(409, "A company with this GSTIN is already registered")
 
-    logo_bytes, logo_ext = await read_validated(logo, {".png", ".jpg", ".jpeg", ".webp"}, "Logo")
-    letter_bytes, letter_ext = await read_validated(signatory_letter, {".pdf"}, "Authorized signatory letter")
+    logo_bytes, logo_mime = await read_validated(logo, {".png", ".jpg", ".jpeg", ".webp"}, "Logo")
+    letter_bytes, _ = await read_validated(signatory_letter, {".pdf"}, "Authorized signatory letter")
 
     company = Company(
         name=company_name, website=website.strip(), address=address.strip(),
         cin=cin, gstin=gstin, pan=pan, md_name=md_name.strip(), md_email=md_email.strip(),
         data_types=",".join(types), data_purpose=data_purpose.strip(),
-        logo_file=save_bytes(logo_bytes, logo_ext, LOGO_DIR),
-        letter_file=save_bytes(letter_bytes, letter_ext, DOC_DIR),
+        logo_data=logo_bytes, logo_mime=logo_mime, letter_data=letter_bytes,
     )
     db.add(company)
     db.flush()
