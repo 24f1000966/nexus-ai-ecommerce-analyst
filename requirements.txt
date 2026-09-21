@@ -1,0 +1,11 @@
+streamlit
+pandas
+matplotlib
+fastapi
+uvicorn[standard]
+sqlalchemy
+pyjwt
+python-multipart
+# Optional — only needed once you plug in a real LLM key:
+# anthropic
+# openai

@@ -1,0 +1,9 @@
+__pycache__/
+node_modules/
+frontend/dist/
+data/platform.db
+backend/uploads/logos/*
+backend/uploads/documents/*
+!backend/uploads/logos/.gitkeep
+!backend/uploads/documents/.gitkeep
+.env
