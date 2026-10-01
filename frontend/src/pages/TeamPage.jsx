@@ -1,8 +1,9 @@
-import { Crown, Eye, EyeOff, UserPlus } from "lucide-react";
+import { Check, Copy, Crown, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { addMember, errorMessage, getMembers, setMemberActive } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Button, Card, Field, inputClass } from "../components/ui";
+import { useToast } from "../components/Toast";
 
 const EMPTY = { full_name: "", designation: "", email: "", password: "" };
 const SUGGESTED = ["Head of Operations", "Marketing Head", "Category Manager", "Supply Chain Lead", "CEO / MD"];
@@ -15,10 +16,12 @@ function generatePassword() {
 
 export default function TeamPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [members, setMembers] = useState([]);
   const [form, setForm] = useState({ ...EMPTY, password: generatePassword() });
   const [showPw, setShowPw] = useState(true);
   const [created, setCreated] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -34,8 +37,10 @@ export default function TeamPage() {
     try {
       const m = await addMember(form);
       setCreated({ email: m.email, password: form.password, name: m.full_name });
+      setCopied(false);
       setForm({ ...EMPTY, password: generatePassword() });
       await load();
+      toast.success(`${m.full_name} added to the team.`);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -43,12 +48,24 @@ export default function TeamPage() {
     }
   }
 
+  async function copyCredentials() {
+    try {
+      await navigator.clipboard.writeText(`Login: ${created.email}\nTemporary password: ${created.password}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — silently ignore
+    }
+  }
+
   async function toggle(m) {
     try {
       await setMemberActive(m.id, !m.is_active);
       await load();
+      toast.success(`${m.full_name} ${m.is_active ? "disabled" : "enabled"}.`);
     } catch (err) {
       setError(errorMessage(err));
+      toast.error(errorMessage(err));
     }
   }
 
@@ -108,7 +125,15 @@ export default function TeamPage() {
 
           {created && (
             <div className="mb-4 rounded-xl bg-[var(--status-good-bg)] px-3.5 py-3 text-[12.5px]">
-              <div className="font-semibold text-[#0a7a0a]">{created.name} added</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-semibold text-[#0a7a0a]">{created.name} added</div>
+                <button
+                  onClick={copyCredentials}
+                  className="shrink-0 flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-semibold text-[#0a7a0a] hover:bg-white/60 transition-colors"
+                >
+                  {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
               <div className="mt-1 text-[var(--ink-secondary)]">Login: <b>{created.email}</b></div>
               <div className="text-[var(--ink-secondary)]">Temporary password: <b className="font-mono">{created.password}</b></div>
               <div className="mt-1 text-[var(--ink-muted)]">Shown once — copy it now.</div>

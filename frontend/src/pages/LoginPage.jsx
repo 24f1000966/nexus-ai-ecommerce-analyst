@@ -1,3 +1,4 @@
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { errorMessage } from "../api";
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -46,8 +48,18 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required />
         </Field>
         <Field label="Password">
-          <input className={inputClass} type="password" autoComplete="current-password" value={password}
-            onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+          <div className="relative">
+            <input className={`${inputClass} pr-10`} type={showPw ? "text" : "password"} autoComplete="current-password" value={password}
+              onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] hover:text-[var(--ink-secondary)] transition-colors"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </Field>
         {error && <div className="rounded-xl bg-[var(--status-critical-bg)] text-[var(--status-critical)] text-sm px-3.5 py-2.5">{error}</div>}
         <Button type="submit" loading={busy} className="w-full">Sign in</Button>

@@ -1,4 +1,5 @@
 import { BarChart3, Building2, ShieldCheck, Sparkles } from "lucide-react";
+import Footer from "../components/Footer";
 
 const POINTS = [
   { icon: Sparkles, title: "Ask in plain English", text: "Get answers, charts and root-cause analysis from your own e-commerce data." },
@@ -33,8 +34,11 @@ export default function AuthLayout({ children, wide = false }) {
         </div>
         <div className="text-xs text-white/55">RAG + Agentic AI · PPD II project</div>
       </aside>
-      <main className="flex-1 grid place-items-center px-5 py-10 overflow-y-auto">
-        <div className={`w-full ${wide ? "max-w-2xl" : "max-w-sm"}`}>{children}</div>
+      <main className="flex-1 flex flex-col overflow-y-auto">
+        <div className="flex-1 grid place-items-center px-5 py-10">
+          <div className={`w-full ${wide ? "max-w-2xl" : "max-w-sm"}`}>{children}</div>
+        </div>
+        <Footer compact />
       </main>
     </div>
   );

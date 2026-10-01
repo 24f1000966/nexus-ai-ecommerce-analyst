@@ -1,7 +1,8 @@
-import { CheckCircle2, ExternalLink, FileText, Globe, Mail, MapPin, ShieldAlert, X, XCircle } from "lucide-react";
+import { CheckCircle2, Check, Copy, ExternalLink, FileText, Globe, Mail, MapPin, ShieldAlert, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { decideCompany, errorMessage, getAdminCompanies, getAdminStats, getCompanyReview, openLetter } from "../api";
 import { Button, Card, CompanyLogo, StatusPill } from "../components/ui";
+import { useToast } from "../components/Toast";
 
 const FILTERS = [["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["suspended", "Suspended"], ["", "All"]];
 const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -101,7 +102,14 @@ export default function AdminPage() {
   );
 }
 
+const DECISION_MESSAGE = {
+  approve: "Company approved — they now have full access.",
+  reject: "Application rejected.",
+  suspend: "Company access suspended.",
+};
+
 function ReviewDrawer({ id, onClose, onChanged }) {
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [mode, setMode] = useState(null); // "reject" | "suspend"
   const [reason, setReason] = useState("");
@@ -111,6 +119,12 @@ function ReviewDrawer({ id, onClose, onChanged }) {
   const load = useCallback(() => getCompanyReview(id).then(setData).catch((e) => setError(errorMessage(e))), [id]);
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   async function decide(action) {
     setBusy(true);
     setError("");
@@ -119,8 +133,11 @@ function ReviewDrawer({ id, onClose, onChanged }) {
       setMode(null);
       setReason("");
       await Promise.all([load(), onChanged()]);
+      toast.success(DECISION_MESSAGE[action] || "Done.");
     } catch (e) {
-      setError(errorMessage(e));
+      const msg = errorMessage(e);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -167,8 +184,8 @@ function ReviewDrawer({ id, onClose, onChanged }) {
 
             <Section title="Company details">
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
-                <Detail label="CIN" value={c.cin} mono /><Detail label="GSTIN" value={c.gstin} mono />
-                <Detail label="PAN" value={c.pan} mono />
+                <Detail label="CIN" value={c.cin} mono copyable /><Detail label="GSTIN" value={c.gstin} mono copyable />
+                <Detail label="PAN" value={c.pan} mono copyable />
                 <Detail label="Website" value={c.website} icon={Globe} />
                 <div className="col-span-2"><Detail label="Registered address" value={c.address} icon={MapPin} /></div>
               </dl>
@@ -253,11 +270,35 @@ function Section({ title, children }) {
   );
 }
 
-function Detail({ label, value, mono, icon: Icon }) {
+function Detail({ label, value, mono, icon: Icon, copyable }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — silently ignore
+    }
+  }
+
   return (
     <div className="min-w-0">
       <dt className="text-[11.5px] text-[var(--ink-muted)] flex items-center gap-1">{Icon && <Icon size={11} />}{label}</dt>
-      <dd className={`font-semibold break-words ${mono ? "font-mono text-[12.5px]" : ""}`}>{value}</dd>
+      <dd className={`font-semibold break-words flex items-center gap-1.5 ${mono ? "font-mono text-[12.5px]" : ""}`}>
+        {value}
+        {copyable && value && (
+          <button
+            type="button"
+            onClick={copy}
+            title="Copy to clipboard"
+            className="shrink-0 text-[var(--ink-muted)] hover:text-[var(--series-1)] transition-colors"
+          >
+            {copied ? <Check size={13} className="text-[var(--status-good)]" /> : <Copy size={13} />}
+          </button>
+        )}
+      </dd>
     </div>
   );
 }

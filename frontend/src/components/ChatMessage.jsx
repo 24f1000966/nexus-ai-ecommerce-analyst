@@ -1,8 +1,12 @@
-import { BarChart3, BookOpen, ChevronDown, Code2, ListTree, TableIcon, User } from "lucide-react";
+import { BarChart3, BookOpen, Check, ChevronDown, Code2, Copy, ListTree, TableIcon, User } from "lucide-react";
 import { useState } from "react";
 import { TrendLineChart, ValueBarChart } from "./Chart";
 import DataTable from "./DataTable";
 import Markdown from "./Markdown";
+
+function plainText(markdown) {
+  return markdown.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1").replace(/^>\s?/gm, "");
+}
 
 export function UserBubble({ text }) {
   return (
@@ -23,15 +27,34 @@ export function AssistantBubble({ response }) {
   const [traceOpen, setTraceOpen] = useState(false);
   const [tab, setTab] = useState("chart");
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { answer, steps, table, chart, intent, sources, sql } = response;
 
+  async function copyAnswer() {
+    try {
+      await navigator.clipboard.writeText(plainText(answer));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — silently ignore
+    }
+  }
+
   return (
-    <div className="animate-in flex justify-start">
+    <div className="animate-in group flex justify-start">
       <div className="max-w-[85%] w-full flex items-start gap-2.5">
         <span className="grid place-items-center w-8 h-8 rounded-full bg-[var(--series-1)] text-white shrink-0">
           <BarChart3 size={15} />
         </span>
-        <div className="flex-1 min-w-0 rounded-2xl rounded-tl-sm bg-white border border-[var(--border)] px-4 py-3 shadow-sm">
+        <div className="relative flex-1 min-w-0 rounded-2xl rounded-tl-sm bg-white border border-[var(--border)] px-4 py-3 shadow-sm">
+          <button
+            onClick={copyAnswer}
+            title="Copy answer"
+            className="absolute top-2.5 right-2.5 grid place-items-center w-6 h-6 rounded-md text-[var(--ink-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--page)] hover:text-[var(--series-1)] transition-all"
+          >
+            {copied ? <Check size={13} className="text-[var(--status-good)]" /> : <Copy size={13} />}
+          </button>
+
           {steps?.length > 0 && (
             <button
               onClick={() => setTraceOpen((v) => !v)}

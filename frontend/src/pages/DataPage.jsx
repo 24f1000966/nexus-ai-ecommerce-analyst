@@ -4,15 +4,16 @@ import {
   deleteDoc, deleteTable, downloadTemplate, errorMessage, getDataStatus, uploadDoc, uploadTable,
 } from "../api";
 import { Card } from "../components/ui";
+import { useToast } from "../components/Toast";
 
 const TABLE_LABEL = { customers: "Customers", products: "Products", orders: "Orders", order_items: "Order items" };
 const fmtDate = (iso) => new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
 export default function DataPage() {
+  const toast = useToast();
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState(null);
 
   const load = useCallback(() => getDataStatus().then(setStatus).catch((e) => setError(errorMessage(e))), []);
   useEffect(() => { load(); }, [load]);
@@ -20,13 +21,13 @@ export default function DataPage() {
   async function run(key, fn, success) {
     setBusy(key);
     setError("");
-    setNotice(null);
     try {
       const s = await fn();
       setStatus(s);
-      setNotice({ text: success(s), warnings: s.upload_warnings || [] });
+      toast.success(success(s));
+      (s.upload_warnings || []).forEach((w) => toast.info(w, 6000));
     } catch (e) {
-      setError(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy("");
     }
@@ -62,12 +63,6 @@ export default function DataPage() {
         </div>
 
         {error && <div className="mt-4 rounded-xl bg-[var(--status-critical-bg)] text-[var(--status-critical)] text-[13px] px-3.5 py-2.5">{error}</div>}
-        {notice && (
-          <div className="mt-4 rounded-xl bg-white border border-[var(--border)] text-[13px] px-3.5 py-2.5">
-            <div className="font-semibold">{notice.text}</div>
-            {notice.warnings.map((w) => <div key={w} className="text-[#b06b00] mt-1">⚠ {w}</div>)}
-          </div>
-        )}
         {status.warnings.length > 0 && (
           <div className="mt-4 rounded-xl bg-[#fdf1e0] text-[#8a5400] text-[13px] px-3.5 py-2.5 space-y-1">
             {status.warnings.map((w) => <div key={w} className="flex gap-2"><AlertTriangle size={14} className="shrink-0 mt-0.5" /> {w}</div>)}
@@ -124,9 +119,43 @@ function FilePicker({ accept, busy, label, onPick, variant = "primary" }) {
   );
 }
 
+function useFileDrop(onFile, accept) {
+  const [dragOver, setDragOver] = useState(false);
+
+  function matches(file) {
+    if (!accept) return true;
+    const exts = accept.split(",").filter((a) => a.startsWith("."));
+    return !exts.length || exts.some((ext) => file.name.toLowerCase().endsWith(ext));
+  }
+
+  return {
+    dragOver,
+    handlers: {
+      onDragOver: (e) => { e.preventDefault(); setDragOver(true); },
+      onDragLeave: () => setDragOver(false),
+      onDrop: (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && matches(file)) onFile(file);
+      },
+    },
+  };
+}
+
 function TableCard({ t, busy, onUpload, onDelete, onTemplate }) {
+  const { dragOver, handlers } = useFileDrop(onUpload, ".csv");
+
   return (
-    <Card className="p-4">
+    <Card
+      className={`relative p-4 transition-colors ${dragOver ? "ring-2 ring-[var(--series-1)] bg-[var(--series-1)]/5" : ""}`}
+      {...handlers}
+    >
+      {dragOver && (
+        <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[var(--series-1)]/10 border-2 border-dashed border-[var(--series-1)] text-[var(--series-1)] text-sm font-semibold">
+          Drop to upload {t.table}.csv
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-bold flex items-center gap-1.5">
@@ -154,6 +183,7 @@ function TableCard({ t, busy, onUpload, onDelete, onTemplate }) {
 
       <div className="mt-3 flex items-center gap-2">
         <FilePicker accept=".csv,text/csv" busy={busy} label={t.uploaded ? "Replace" : "Upload CSV"} onPick={onUpload} />
+        <span className="hidden sm:inline text-[11px] text-[var(--ink-muted)]">or drag & drop</span>
         <button onClick={onTemplate} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold text-[var(--ink-secondary)] hover:bg-[var(--page)]">
           <Download size={13} /> Template
         </button>
@@ -168,14 +198,21 @@ function TableCard({ t, busy, onUpload, onDelete, onTemplate }) {
 }
 
 function KnowledgeBase({ docs, busy, onUpload, onDelete }) {
+  const { dragOver, handlers } = useFileDrop(onUpload, ".md,.txt");
+
   return (
-    <Card className="mt-6 p-5">
+    <Card className={`relative mt-6 p-5 transition-colors ${dragOver ? "ring-2 ring-[var(--series-1)] bg-[var(--series-1)]/5" : ""}`} {...handlers}>
+      {dragOver && (
+        <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[var(--series-1)]/10 border-2 border-dashed border-[var(--series-1)] text-[var(--series-1)] text-sm font-semibold">
+          Drop to add this document
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-extrabold flex items-center gap-2"><BookOpen size={17} /> Knowledge base (RAG)</h2>
           <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1 max-w-2xl">
-            Add your own policies, FAQs or SOPs as <b>.md</b> or <b>.txt</b>. They are chunked by heading, indexed with
-            TF-IDF, and retrieved alongside the platform's default policies when someone asks a policy question.
+            Add your own policies, FAQs or SOPs as <b>.md</b> or <b>.txt</b> (or drag & drop one here). They are chunked
+            by heading, indexed with TF-IDF, and retrieved alongside the platform's default policies.
           </p>
         </div>
         <FilePicker accept=".md,.txt,text/markdown,text/plain" busy={busy} label="Add document" onPick={onUpload} variant="ghost" />
