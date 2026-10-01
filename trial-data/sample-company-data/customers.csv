@@ -1,0 +1,181 @@
+customer_id,name,city,state,signup_date
+1,Vikram Das,Kochi,Kerala,2025-08-08
+2,Rahul Pillai,Lucknow,Uttar Pradesh,2025-02-26
+3,Harsh Mishra,Bhubaneswar,Odisha,2025-05-15
+4,Ishita Pandey,Kochi,Kerala,2025-01-30
+5,Rahul Menon,Lucknow,Uttar Pradesh,2024-11-23
+6,Anjali Mishra,Patna,Bihar,2024-11-16
+7,Rahul Menon,Nagpur,Maharashtra,2024-11-07
+8,Ishita Yadav,Bhubaneswar,Odisha,2025-02-10
+9,Ishita Menon,Lucknow,Uttar Pradesh,2024-11-20
+10,Tarun Das,Surat,Gujarat,2025-01-30
+11,Pooja Pillai,Lucknow,Uttar Pradesh,2024-11-13
+12,Neha Pillai,Patna,Bihar,2025-06-01
+13,Rahul Yadav,Bhubaneswar,Odisha,2025-05-28
+14,Vikram Pandey,Bhubaneswar,Odisha,2025-07-31
+15,Harsh Mishra,Bhubaneswar,Odisha,2025-05-19
+16,Manish Pillai,Kochi,Kerala,2025-03-25
+17,Manish Yadav,Kochi,Kerala,2025-02-28
+18,Neha Menon,Patna,Bihar,2025-06-01
+19,Aditya Menon,Lucknow,Uttar Pradesh,2024-11-11
+20,Neha Pillai,Kochi,Kerala,2025-03-10
+21,Aditya Jain,Surat,Gujarat,2025-07-26
+22,Rahul Pillai,Kochi,Kerala,2025-06-09
+23,Nidhi Tiwari,Indore,Madhya Pradesh,2024-12-25
+24,Anjali Mishra,Nagpur,Maharashtra,2025-07-24
+25,Nidhi Pillai,Bhubaneswar,Odisha,2025-03-25
+26,Vikram Tiwari,Bhubaneswar,Odisha,2024-12-21
+27,Harsh Jain,Lucknow,Uttar Pradesh,2025-07-16
+28,Neha Jain,Nagpur,Maharashtra,2025-07-30
+29,Ishita Choudhary,Nagpur,Maharashtra,2024-11-10
+30,Sana Jain,Surat,Gujarat,2025-02-16
+31,Sana Tiwari,Lucknow,Uttar Pradesh,2025-01-08
+32,Vikram Das,Bhubaneswar,Odisha,2025-07-04
+33,Manish Mishra,Indore,Madhya Pradesh,2025-04-07
+34,Pooja Menon,Kochi,Kerala,2025-02-13
+35,Tarun Jain,Lucknow,Uttar Pradesh,2025-06-08
+36,Manish Bose,Bhubaneswar,Odisha,2025-04-12
+37,Pooja Bose,Patna,Bihar,2024-11-24
+38,Neha Bose,Surat,Gujarat,2025-02-19
+39,Siddharth Das,Lucknow,Uttar Pradesh,2025-06-03
+40,Pooja Menon,Nagpur,Maharashtra,2025-05-05
+41,Ishita Jain,Patna,Bihar,2025-05-31
+42,Neha Choudhary,Lucknow,Uttar Pradesh,2025-06-19
+43,Anjali Pillai,Surat,Gujarat,2024-11-16
+44,Vikram Das,Nagpur,Maharashtra,2024-12-12
+45,Harsh Mishra,Kochi,Kerala,2024-11-19
+46,Anjali Bose,Kochi,Kerala,2025-02-12
+47,Rahul Jain,Nagpur,Maharashtra,2025-02-08
+48,Ishita Menon,Lucknow,Uttar Pradesh,2025-05-18
+49,Manish Das,Lucknow,Uttar Pradesh,2025-03-11
+50,Harsh Mishra,Lucknow,Uttar Pradesh,2025-09-01
+51,Harsh Das,Bhubaneswar,Odisha,2025-07-12
+52,Vikram Yadav,Lucknow,Uttar Pradesh,2025-07-27
+53,Tarun Menon,Bhubaneswar,Odisha,2025-02-21
+54,Pooja Choudhary,Surat,Gujarat,2025-02-27
+55,Manish Pandey,Lucknow,Uttar Pradesh,2024-12-26
+56,Manish Jain,Kochi,Kerala,2025-03-26
+57,Rahul Das,Lucknow,Uttar Pradesh,2025-03-10
+58,Aditya Choudhary,Kochi,Kerala,2025-06-11
+59,Kavya Mishra,Indore,Madhya Pradesh,2024-12-05
+60,Vikram Das,Nagpur,Maharashtra,2024-11-27
+61,Ishita Pillai,Surat,Gujarat,2025-07-17
+62,Aditya Choudhary,Bhubaneswar,Odisha,2025-02-26
+63,Pooja Tiwari,Patna,Bihar,2025-05-10
+64,Kavya Pillai,Patna,Bihar,2024-12-18
+65,Vikram Menon,Bhubaneswar,Odisha,2025-05-25
+66,Nidhi Menon,Patna,Bihar,2025-02-08
+67,Aditya Menon,Indore,Madhya Pradesh,2024-12-10
+68,Manish Tiwari,Nagpur,Maharashtra,2025-08-18
+69,Ishita Choudhary,Kochi,Kerala,2025-04-22
+70,Siddharth Yadav,Surat,Gujarat,2025-01-16
+71,Nidhi Tiwari,Surat,Gujarat,2025-07-22
+72,Siddharth Pandey,Indore,Madhya Pradesh,2025-01-04
+73,Siddharth Tiwari,Indore,Madhya Pradesh,2024-12-28
+74,Harsh Yadav,Patna,Bihar,2025-09-01
+75,Manish Tiwari,Patna,Bihar,2025-07-20
+76,Tarun Pandey,Kochi,Kerala,2025-05-22
+77,Manish Das,Kochi,Kerala,2025-03-15
+78,Rahul Bose,Kochi,Kerala,2025-02-08
+79,Aditya Pandey,Nagpur,Maharashtra,2025-06-12
+80,Pooja Das,Lucknow,Uttar Pradesh,2025-06-16
+81,Harsh Jain,Patna,Bihar,2025-06-19
+82,Harsh Yadav,Kochi,Kerala,2025-03-06
+83,Pooja Pillai,Bhubaneswar,Odisha,2025-06-26
+84,Ishita Mishra,Patna,Bihar,2025-07-11
+85,Kavya Das,Kochi,Kerala,2025-05-25
+86,Tarun Menon,Lucknow,Uttar Pradesh,2025-04-26
+87,Siddharth Choudhary,Bhubaneswar,Odisha,2025-05-01
+88,Nidhi Yadav,Surat,Gujarat,2025-04-22
+89,Kavya Bose,Patna,Bihar,2025-06-26
+90,Ishita Tiwari,Kochi,Kerala,2024-11-07
+91,Tarun Pillai,Kochi,Kerala,2024-12-19
+92,Pooja Pillai,Indore,Madhya Pradesh,2024-12-07
+93,Kavya Mishra,Patna,Bihar,2025-01-19
+94,Nidhi Das,Bhubaneswar,Odisha,2025-08-30
+95,Nidhi Das,Indore,Madhya Pradesh,2025-06-21
+96,Manish Yadav,Nagpur,Maharashtra,2025-07-02
+97,Kavya Mishra,Surat,Gujarat,2024-12-10
+98,Kavya Pillai,Kochi,Kerala,2025-07-09
+99,Kavya Mishra,Indore,Madhya Pradesh,2025-05-27
+100,Neha Mishra,Patna,Bihar,2025-07-13
+101,Kavya Jain,Bhubaneswar,Odisha,2025-08-18
+102,Nidhi Pandey,Kochi,Kerala,2025-03-19
+103,Harsh Pillai,Bhubaneswar,Odisha,2024-12-13
+104,Siddharth Choudhary,Kochi,Kerala,2024-12-15
+105,Kavya Jain,Bhubaneswar,Odisha,2025-04-28
+106,Aditya Pillai,Surat,Gujarat,2024-11-19
+107,Siddharth Jain,Indore,Madhya Pradesh,2025-01-31
+108,Rahul Bose,Kochi,Kerala,2025-03-24
+109,Rahul Menon,Kochi,Kerala,2025-07-26
+110,Siddharth Choudhary,Patna,Bihar,2025-07-01
+111,Nidhi Das,Nagpur,Maharashtra,2025-02-26
+112,Pooja Choudhary,Indore,Madhya Pradesh,2025-01-05
+113,Siddharth Pandey,Kochi,Kerala,2024-12-26
+114,Pooja Menon,Indore,Madhya Pradesh,2025-01-24
+115,Kavya Bose,Surat,Gujarat,2025-01-29
+116,Siddharth Tiwari,Surat,Gujarat,2025-07-16
+117,Aditya Tiwari,Lucknow,Uttar Pradesh,2025-03-12
+118,Kavya Jain,Kochi,Kerala,2025-08-23
+119,Anjali Tiwari,Bhubaneswar,Odisha,2025-04-03
+120,Kavya Pandey,Lucknow,Uttar Pradesh,2025-05-07
+121,Rahul Pandey,Surat,Gujarat,2025-04-15
+122,Ishita Das,Surat,Gujarat,2025-06-27
+123,Tarun Bose,Patna,Bihar,2025-04-22
+124,Anjali Das,Bhubaneswar,Odisha,2024-12-12
+125,Harsh Jain,Nagpur,Maharashtra,2025-03-18
+126,Rahul Choudhary,Lucknow,Uttar Pradesh,2025-05-31
+127,Anjali Pandey,Surat,Gujarat,2025-08-24
+128,Sana Pandey,Patna,Bihar,2025-04-21
+129,Rahul Yadav,Patna,Bihar,2025-05-11
+130,Rahul Choudhary,Patna,Bihar,2025-07-01
+131,Manish Mishra,Surat,Gujarat,2024-11-22
+132,Anjali Choudhary,Bhubaneswar,Odisha,2025-06-27
+133,Ishita Pillai,Nagpur,Maharashtra,2025-05-02
+134,Rahul Das,Surat,Gujarat,2025-08-07
+135,Pooja Menon,Surat,Gujarat,2025-03-29
+136,Kavya Menon,Surat,Gujarat,2025-01-16
+137,Kavya Das,Surat,Gujarat,2025-03-08
+138,Nidhi Mishra,Surat,Gujarat,2025-08-14
+139,Ishita Mishra,Nagpur,Maharashtra,2024-12-17
+140,Kavya Menon,Bhubaneswar,Odisha,2025-01-01
+141,Siddharth Jain,Lucknow,Uttar Pradesh,2025-01-23
+142,Sana Jain,Bhubaneswar,Odisha,2025-02-12
+143,Kavya Choudhary,Nagpur,Maharashtra,2025-05-14
+144,Siddharth Tiwari,Indore,Madhya Pradesh,2025-06-22
+145,Anjali Tiwari,Lucknow,Uttar Pradesh,2025-06-27
+146,Ishita Pandey,Nagpur,Maharashtra,2025-04-24
+147,Anjali Das,Lucknow,Uttar Pradesh,2025-07-20
+148,Sana Bose,Patna,Bihar,2024-12-16
+149,Sana Choudhary,Bhubaneswar,Odisha,2025-04-30
+150,Aditya Choudhary,Lucknow,Uttar Pradesh,2025-01-09
+151,Pooja Das,Surat,Gujarat,2025-01-16
+152,Ishita Choudhary,Surat,Gujarat,2025-03-17
+153,Kavya Tiwari,Indore,Madhya Pradesh,2025-08-15
+154,Neha Menon,Surat,Gujarat,2025-05-31
+155,Ishita Tiwari,Kochi,Kerala,2025-07-21
+156,Manish Choudhary,Bhubaneswar,Odisha,2025-05-22
+157,Siddharth Pillai,Patna,Bihar,2025-08-30
+158,Rahul Choudhary,Patna,Bihar,2025-07-18
+159,Pooja Bose,Bhubaneswar,Odisha,2025-08-11
+160,Anjali Mishra,Surat,Gujarat,2025-03-30
+161,Sana Menon,Lucknow,Uttar Pradesh,2024-11-06
+162,Kavya Das,Nagpur,Maharashtra,2025-02-14
+163,Nidhi Tiwari,Nagpur,Maharashtra,2024-12-22
+164,Pooja Choudhary,Nagpur,Maharashtra,2025-06-19
+165,Ishita Pillai,Nagpur,Maharashtra,2025-01-25
+166,Aditya Pillai,Indore,Madhya Pradesh,2024-12-07
+167,Nidhi Pillai,Bhubaneswar,Odisha,2025-08-24
+168,Tarun Yadav,Patna,Bihar,2025-05-07
+169,Rahul Mishra,Lucknow,Uttar Pradesh,2025-06-25
+170,Sana Tiwari,Lucknow,Uttar Pradesh,2025-02-21
+171,Tarun Jain,Bhubaneswar,Odisha,2025-08-07
+172,Sana Mishra,Nagpur,Maharashtra,2024-12-03
+173,Sana Menon,Kochi,Kerala,2025-04-19
+174,Ishita Jain,Patna,Bihar,2025-07-28
+175,Aditya Pillai,Bhubaneswar,Odisha,2025-07-16
+176,Sana Pillai,Lucknow,Uttar Pradesh,2025-01-02
+177,Neha Pandey,Patna,Bihar,2025-04-19
+178,Siddharth Menon,Indore,Madhya Pradesh,2025-01-09
+179,Manish Bose,Lucknow,Uttar Pradesh,2024-12-30
+180,Sana Choudhary,Patna,Bihar,2025-08-09

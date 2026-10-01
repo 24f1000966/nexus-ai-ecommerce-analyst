@@ -1,4 +1,4 @@
-import { BarChart3, ChevronDown, ListTree, TableIcon, User } from "lucide-react";
+import { BarChart3, BookOpen, ChevronDown, Code2, ListTree, TableIcon, User } from "lucide-react";
 import { useState } from "react";
 import { TrendLineChart, ValueBarChart } from "./Chart";
 import DataTable from "./DataTable";
@@ -22,7 +22,8 @@ export function UserBubble({ text }) {
 export function AssistantBubble({ response }) {
   const [traceOpen, setTraceOpen] = useState(false);
   const [tab, setTab] = useState("chart");
-  const { answer, steps, table, chart, intent } = response;
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const { answer, steps, table, chart, intent, sources, sql } = response;
 
   return (
     <div className="animate-in flex justify-start">
@@ -52,9 +53,42 @@ export function AssistantBubble({ response }) {
             </ol>
           )}
 
-          <p className="text-[14px] leading-relaxed text-[var(--ink-primary)]">
+          <div className="text-[14px] leading-relaxed text-[var(--ink-primary)]">
             <Markdown text={answer} />
-          </p>
+          </div>
+
+          {sources?.length > 0 && (
+            <div className="mt-3">
+              <button
+                onClick={() => setSourcesOpen((v) => !v)}
+                className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[var(--ink-muted)] hover:text-[var(--series-1)]"
+              >
+                <BookOpen size={13} />
+                {sources.length} source{sources.length > 1 ? "s" : ""} retrieved (RAG)
+                <ChevronDown size={12} className={`transition-transform ${sourcesOpen ? "rotate-180" : ""}`} />
+              </button>
+              {sourcesOpen && (
+                <ul className="mt-2 space-y-2">
+                  {sources.map((s, i) => (
+                    <li key={i} className="rounded-lg bg-[var(--page)] px-3 py-2">
+                      <div className="flex items-center justify-between gap-3 text-[11.5px] font-semibold text-[var(--ink-secondary)]">
+                        <span>[{i + 1}] {s.doc.replace(/^\d+:/, "")}{s.section ? ` › ${s.section}` : ""}</span>
+                        <span className="tabular-nums text-[var(--ink-muted)]" title="Cosine similarity">score {s.score.toFixed(2)}</span>
+                      </div>
+                      <p className="mt-1 text-[12px] leading-snug text-[var(--ink-secondary)] line-clamp-3">{s.text}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {sql && (
+            <pre className="mt-3 flex gap-2 text-[11.5px] leading-relaxed bg-[var(--page)] rounded-lg p-2.5 overflow-x-auto text-[var(--ink-secondary)]">
+              <Code2 size={13} className="shrink-0 mt-0.5" />
+              {sql}
+            </pre>
+          )}
 
           {table?.length > 0 && (
             <div className="mt-3">

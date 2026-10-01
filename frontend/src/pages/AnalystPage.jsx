@@ -1,10 +1,12 @@
-import { AlertCircle, IndianRupee, PackageSearch, Send, ShoppingCart, Sparkles } from "lucide-react";
+import { AlertCircle, Database, IndianRupee, PackageSearch, Send, ShoppingCart, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { askQuestion, getKpis, getSamples, getSchema, getStatus } from "../api";
 import AnomalyBanner from "../components/AnomalyBanner";
 import { AssistantBubble, UserBubble } from "../components/ChatMessage";
 import KpiCard from "../components/KpiCard";
 import Sidebar from "../components/Sidebar";
+
+const monthName = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleString("en-IN", { month: "long", year: "numeric" });
 
 export default function AnalystPage() {
   const [kpis, setKpis] = useState(null);
@@ -63,15 +65,26 @@ export default function AnalystPage() {
               <Sparkles size={11} /> RAG + Agentic AI
             </span>
           </div>
-          <p className="text-sm text-[var(--ink-secondary)] mt-0.5">
+          <p className="text-sm text-[var(--ink-secondary)] mt-0.5 flex items-center gap-2 flex-wrap">
             E-commerce analytics agent — ask a question, or click a sample in the sidebar.
+            {kpis && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={kpis.is_demo
+                  ? { background: "#fdf1e0", color: "#b06b00" }
+                  : { background: "var(--status-good-bg)", color: "#0a7a0a" }}
+                title={kpis.is_demo ? "Upload your own CSVs on the Data page to analyse your data" : undefined}
+              >
+                <Database size={11} /> {kpis.data_source}
+              </span>
+            )}
           </p>
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5" ref={scrollRef}>
           {kpis && (
             <div className="grid grid-cols-4 gap-3">
-              <KpiCard icon={IndianRupee} label="Total Revenue" value={`₹${kpis.total_revenue.toLocaleString("en-IN")}`} sub="Jan – Aug 2026" accent="var(--series-1)" />
+              <KpiCard icon={IndianRupee} label="Total Revenue" value={`₹${kpis.total_revenue.toLocaleString("en-IN")}`} sub={kpis.period} accent="var(--series-1)" />
               <KpiCard icon={ShoppingCart} label="Total Orders" value={kpis.total_orders.toLocaleString("en-IN")} sub="Delivered / Shipped" accent="var(--series-3)" />
               <KpiCard icon={IndianRupee} label="Avg Order Value" value={`₹${kpis.avg_order_value.toLocaleString("en-IN")}`} sub="Per order" accent="var(--series-2)" />
               <KpiCard icon={AlertCircle} label="Active Alerts" value={kpis.active_anomalies} sub={`${kpis.low_stock_count} product(s) low on stock`} accent="var(--status-critical)" />
@@ -79,7 +92,7 @@ export default function AnalystPage() {
           )}
 
           {kpis?.active_anomalies > 0 && (
-            <AnomalyBanner months={kpis.anomaly_months} onExplain={() => handleAsk("Why did sales drop in July?")} />
+            <AnomalyBanner months={kpis.anomaly_months} onExplain={() => handleAsk(`Why did sales drop in ${monthName(kpis.anomaly_months.at(-1))}?`)} />
           )}
 
           {error && (

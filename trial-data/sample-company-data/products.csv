@@ -1,0 +1,17 @@
+product_id,name,category,price,stock_qty
+101,Kurta Set,Fashion,1499,108
+102,Silk Saree,Fashion,3999,110
+103,Linen Shirt,Fashion,1199,112
+104,Ethnic Jutti,Fashion,899,55
+105,Palazzo Pants,Fashion,799,39
+106,Denim Jacket,Fashion,2299,106
+107,Kajal Pencil,Beauty,199,5
+108,Vitamin C Serum,Beauty,699,8
+109,Matte Lipstick,Beauty,449,7
+110,Hair Oil 200ml,Beauty,299,13
+111,Oxidised Jhumkas,Accessories,349,125
+112,Tote Bag,Accessories,999,118
+113,Analog Watch,Accessories,2499,68
+114,Diya Set (12pc),Home Decor,399,109
+115,Cushion Covers,Home Decor,649,102
+116,Wall Hanging,Home Decor,849,47

@@ -22,9 +22,10 @@ from backend import models
 from backend.config import CORS_ORIGINS, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD
 from backend.database import Base, SessionLocal, engine, get_db
 from backend.migrate_local import upgrade_sqlite
-from backend.routers import admin, auth, company
+from backend.routers import admin, auth, company, data
 from backend.schemas import logo_signature
 from backend.security import hash_password, require_approved_user
+from backend.tenant_data import tenant_for
 
 
 def seed_super_admin():
@@ -57,12 +58,13 @@ api.add_middleware(
 api.include_router(auth.router)
 api.include_router(admin.router)
 api.include_router(company.router)
+api.include_router(data.router)
 
 SAMPLE_GROUPS = {
     "Sales": ["What are the top 5 selling products?", "Show the sales trend by month", "Show revenue by category"],
     "Inventory": ["Which products are low in stock?"],
     "Customers": ["What is the average order value?", "Show sales by city", "Who are our top customers?"],
-    "Policy (RAG)": ["What is your return policy?"],
+    "Policy (RAG)": ["What is your return policy?", "Can I pay cash on delivery?", "How long does express shipping take?"],
     "Agentic / Autonomous": ["Why did sales drop in July?", "Detect anomalies in sales"],
 }
 
@@ -89,16 +91,17 @@ def company_logo(company_id: int, sig: str = "", db: Session = Depends(get_db)):
                     headers={"Cache-Control": "private, max-age=3600", "X-Content-Type-Options": "nosniff"})
 
 
-# --- Analytics (any approved company user). Phase 3 will scope these per company. ---
+# --- Analytics (any approved company user), scoped to the caller's company ---
 
 @api.get("/api/status")
 def status(_=Depends(require_approved_user)):
-    return {"llm_available": llm_backend.available()}
+    return {"llm_available": llm_backend.available(), "llm_provider": llm_backend.provider()}
 
 
 @api.get("/api/kpis")
-def kpis(_=Depends(require_approved_user)):
-    return agent.dashboard_kpis()
+def kpis(user: models.User = Depends(require_approved_user), db: Session = Depends(get_db)):
+    with analytics_db.use_tenant(tenant_for(db, user.company_id)):
+        return agent.dashboard_kpis()
 
 
 @api.get("/api/samples")
@@ -112,14 +115,21 @@ def schema(_=Depends(require_approved_user)):
 
 
 @api.post("/api/ask")
-def ask(req: AskRequest, _=Depends(require_approved_user)):
-    if not req.question.strip():
+def ask(req: AskRequest, user: models.User = Depends(require_approved_user), db: Session = Depends(get_db)):
+    question = req.question.strip()
+    if not question:
         raise HTTPException(400, "Question must not be empty")
-    resp = agent.answer(req.question)
+    if len(question) > 500:
+        raise HTTPException(422, "Question is too long (max 500 characters)")
+    with analytics_db.use_tenant(tenant_for(db, user.company_id)) as tenant:
+        resp = agent.answer(question)
     return {
         "intent": resp.intent,
         "answer": resp.answer,
         "steps": resp.steps,
         "table": resp.table.to_dict(orient="records") if resp.table is not None else None,
         "chart": resp.chart,
+        "sources": resp.sources,
+        "sql": resp.sql,
+        "data_source": tenant.label,
     }

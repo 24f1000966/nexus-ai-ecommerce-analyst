@@ -18,7 +18,7 @@ def _database_url() -> str:
 
 DB_URL = _database_url()
 
-SECRET_KEY = os.environ.get("NEXUS_SECRET_KEY", "dev-only-secret-change-me")
+SECRET_KEY = os.environ.get("NEXUS_SECRET_KEY", "dev-only-secret-change-me-in-production")
 TOKEN_HOURS = 12
 
 SUPER_ADMIN_EMAIL = os.environ.get("NEXUS_ADMIN_EMAIL", "superadmin@nexusai.in")
@@ -31,6 +31,7 @@ CORS_ORIGINS = [
 ]
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+MAX_CSV_BYTES = 20 * 1024 * 1024
 
 if IS_PRODUCTION:
     missing = [k for k in ("DATABASE_URL", "NEXUS_SECRET_KEY", "NEXUS_ADMIN_PASSWORD") if not os.environ.get(k)]

@@ -4,6 +4,7 @@ import AppShell from "./components/AppShell";
 import { RedirectHome, RequireAuth } from "./components/RouteGuards";
 import AdminPage from "./pages/AdminPage";
 import AnalystPage from "./pages/AnalystPage";
+import DataPage from "./pages/DataPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import StatusPage from "./pages/StatusPage";
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/admin" element={<RequireAuth roles={["super_admin"]}><AdminPage /></RequireAuth>} />
             <Route path="/status" element={<StatusPage />} />
             <Route path="/dashboard" element={<RequireAuth roles={["company_admin", "member"]} needApproved><AnalystPage /></RequireAuth>} />
+            <Route path="/data" element={<RequireAuth roles={["company_admin"]} needApproved><DataPage /></RequireAuth>} />
             <Route path="/team" element={<RequireAuth roles={["company_admin"]} needApproved><TeamPage /></RequireAuth>} />
           </Route>
 
