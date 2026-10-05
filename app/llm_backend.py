@@ -7,20 +7,33 @@ demo works fully offline, and plugging in a key later upgrades it with zero
 other code changes.
 """
 import os
+import re
 
 _ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY")
 _OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
+
+
+_ANTHROPIC_MODEL = os.environ.get("NEXUS_ANTHROPIC_MODEL", "claude-sonnet-5")
+_OPENAI_MODEL = os.environ.get("NEXUS_OPENAI_MODEL", "gpt-4o-mini")
 
 
 def available() -> bool:
     return bool(_ANTHROPIC_KEY or _OPENAI_KEY)
 
 
+def provider() -> str | None:
+    if _ANTHROPIC_KEY:
+        return "anthropic"
+    if _OPENAI_KEY:
+        return "openai"
+    return None
+
+
 def _call_anthropic(system: str, prompt: str) -> str:
     import anthropic
     client = anthropic.Anthropic(api_key=_ANTHROPIC_KEY)
     resp = client.messages.create(
-        model="claude-sonnet-5",
+        model=_ANTHROPIC_MODEL,
         max_tokens=1024,
         system=system,
         messages=[{"role": "user", "content": prompt}],
@@ -32,7 +45,7 @@ def _call_openai(system: str, prompt: str) -> str:
     from openai import OpenAI
     client = OpenAI(api_key=_OPENAI_KEY)
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=_OPENAI_MODEL,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
@@ -53,12 +66,15 @@ def ask(system: str, prompt: str) -> str:
 def generate_sql(question: str, schema: str) -> str:
     system = (
         "You are a SQLite expert. Given a table schema and a business "
-        "question, output ONLY the SQL query (no markdown, no explanation) "
-        "that answers it."
+        "question, output ONLY one read-only SELECT query (no markdown, no "
+        "explanation) that answers it. Revenue = quantity * unit_price from "
+        "order_items, excluding orders with status 'Cancelled'. Limit large "
+        "results to 50 rows."
     )
     prompt = f"Schema:\n{schema}\n\nQuestion: {question}\n\nSQL:"
     sql = ask(system, prompt).strip()
-    return sql.strip("`").replace("sql\n", "", 1) if sql.startswith("```") else sql
+    fenced = re.search(r"```(?:sql)?\s*(.*?)```", sql, re.S | re.I)
+    return (fenced.group(1) if fenced else sql).strip()
 
 
 def synthesize_insight(question: str, data_summary: str, retrieved_context: str = "") -> str:

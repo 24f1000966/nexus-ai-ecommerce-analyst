@@ -61,6 +61,29 @@ export const getMembers = () => data(client.get("/company/members"));
 export const addMember = (body) => data(client.post("/company/members", body));
 export const setMemberActive = (id, active) => data(client.patch(`/company/members/${id}/active`, null, { params: { active } }));
 
+// company data + knowledge base (company admin)
+export const getDataStatus = () => data(client.get("/company/data"));
+export function uploadTable(table, file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  return data(client.post(`/company/data/${table}`, fd));
+}
+export const deleteTable = (table) => data(client.delete(`/company/data/${table}`));
+export async function downloadTemplate(table) {
+  const r = await client.get(`/company/data/${table}/template`, { responseType: "blob" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(r.data);
+  a.download = `${table}_template.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+export function uploadDoc(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  return data(client.post("/company/docs", fd));
+}
+export const deleteDoc = (id) => data(client.delete(`/company/docs/${id}`));
+
 // analytics
 export const getStatus = () => data(client.get("/status"));
 export const getKpis = () => data(client.get("/kpis"));

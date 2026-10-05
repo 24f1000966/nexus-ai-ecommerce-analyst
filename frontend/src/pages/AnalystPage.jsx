@@ -1,10 +1,13 @@
-import { AlertCircle, IndianRupee, PackageSearch, Send, ShoppingCart, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowDown, Database, IndianRupee, PackageSearch, Send, ShoppingCart, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { askQuestion, getKpis, getSamples, getSchema, getStatus } from "../api";
 import AnomalyBanner from "../components/AnomalyBanner";
 import { AssistantBubble, UserBubble } from "../components/ChatMessage";
 import KpiCard from "../components/KpiCard";
 import Sidebar from "../components/Sidebar";
+
+const monthName = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleString("en-IN", { month: "long", year: "numeric" });
+const NEAR_BOTTOM_PX = 120;
 
 export default function AnalystPage() {
   const [kpis, setKpis] = useState(null);
@@ -15,7 +18,9 @@ export default function AnalystPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     getKpis().then(setKpis).catch(() => setError("Could not reach the API. Is the backend running on :8000?"));
@@ -24,9 +29,35 @@ export default function AnalystPage() {
     getStatus().then((d) => setLlmAvailable(d.llm_available)).catch(() => {});
   }, []);
 
+  function scrollToBottom(behavior = "smooth") {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior });
+  }
+
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < NEAR_BOTTOM_PX) scrollToBottom();
   }, [history, loading]);
+
+  function onScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpToBottom(distanceFromBottom > NEAR_BOTTOM_PX);
+  }
+
+  // "/" focuses the question box, like many chat/search UIs — unless already typing somewhere.
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function handleAsk(question) {
     if (!question.trim() || loading) return;
@@ -63,59 +94,81 @@ export default function AnalystPage() {
               <Sparkles size={11} /> RAG + Agentic AI
             </span>
           </div>
-          <p className="text-sm text-[var(--ink-secondary)] mt-0.5">
+          <p className="text-sm text-[var(--ink-secondary)] mt-0.5 flex items-center gap-2 flex-wrap">
             E-commerce analytics agent — ask a question, or click a sample in the sidebar.
+            {kpis && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                style={kpis.is_demo
+                  ? { background: "#fdf1e0", color: "#b06b00" }
+                  : { background: "var(--status-good-bg)", color: "#0a7a0a" }}
+                title={kpis.is_demo ? "Upload your own CSVs on the Data page to analyse your data" : undefined}
+              >
+                <Database size={11} /> {kpis.data_source}
+              </span>
+            )}
           </p>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5" ref={scrollRef}>
-          {kpis && (
-            <div className="grid grid-cols-4 gap-3">
-              <KpiCard icon={IndianRupee} label="Total Revenue" value={`₹${kpis.total_revenue.toLocaleString("en-IN")}`} sub="Jan – Aug 2026" accent="var(--series-1)" />
-              <KpiCard icon={ShoppingCart} label="Total Orders" value={kpis.total_orders.toLocaleString("en-IN")} sub="Delivered / Shipped" accent="var(--series-3)" />
-              <KpiCard icon={IndianRupee} label="Avg Order Value" value={`₹${kpis.avg_order_value.toLocaleString("en-IN")}`} sub="Per order" accent="var(--series-2)" />
-              <KpiCard icon={AlertCircle} label="Active Alerts" value={kpis.active_anomalies} sub={`${kpis.low_stock_count} product(s) low on stock`} accent="var(--status-critical)" />
-            </div>
-          )}
-
-          {kpis?.active_anomalies > 0 && (
-            <AnomalyBanner months={kpis.anomaly_months} onExplain={() => handleAsk("Why did sales drop in July?")} />
-          )}
-
-          {error && (
-            <div className="text-sm text-[var(--status-critical)] bg-[var(--status-critical-bg)] rounded-xl px-4 py-2.5">
-              {error}
-            </div>
-          )}
-
-          {history.length === 0 && !error && (
-            <div className="flex-1 grid place-items-center text-center">
-              <div className="max-w-sm">
-                <div className="mx-auto mb-3 grid place-items-center w-12 h-12 rounded-2xl bg-[var(--series-1)]/10 text-[var(--series-1)]">
-                  <PackageSearch size={22} />
-                </div>
-                <p className="text-sm text-[var(--ink-secondary)]">
-                  No questions yet — try a sample from the sidebar, or type your own question below.
-                </p>
+        <div className="relative flex-1 min-h-0">
+          <div className="h-full overflow-y-auto px-6 py-5 flex flex-col gap-5" ref={scrollRef} onScroll={onScroll}>
+            {kpis && (
+              <div className="grid grid-cols-4 gap-3">
+                <KpiCard icon={IndianRupee} label="Total Revenue" value={`₹${kpis.total_revenue.toLocaleString("en-IN")}`} sub={kpis.period} accent="var(--series-1)" />
+                <KpiCard icon={ShoppingCart} label="Total Orders" value={kpis.total_orders.toLocaleString("en-IN")} sub="Delivered / Shipped" accent="var(--series-3)" />
+                <KpiCard icon={IndianRupee} label="Avg Order Value" value={`₹${kpis.avg_order_value.toLocaleString("en-IN")}`} sub="Per order" accent="var(--series-2)" />
+                <KpiCard icon={AlertCircle} label="Active Alerts" value={kpis.active_anomalies} sub={`${kpis.low_stock_count} product(s) low on stock`} accent="var(--status-critical)" />
               </div>
-            </div>
-          )}
+            )}
 
-          {history.map((item, i) =>
-            item.role === "user" ? (
-              <UserBubble key={i} text={item.text} />
-            ) : (
-              <AssistantBubble key={i} response={item} />
-            )
-          )}
+            {kpis?.active_anomalies > 0 && (
+              <AnomalyBanner months={kpis.anomaly_months} onExplain={() => handleAsk(`Why did sales drop in ${monthName(kpis.anomaly_months.at(-1))}?`)} />
+            )}
 
-          {loading && (
-            <div className="animate-in flex items-center gap-2 text-sm text-[var(--ink-muted)] pl-11">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" />
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" style={{ animationDelay: "0.15s" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" style={{ animationDelay: "0.3s" }} />
-              Agent is reasoning…
-            </div>
+            {error && (
+              <div className="text-sm text-[var(--status-critical)] bg-[var(--status-critical-bg)] rounded-xl px-4 py-2.5">
+                {error}
+              </div>
+            )}
+
+            {history.length === 0 && !error && (
+              <div className="flex-1 grid place-items-center text-center">
+                <div className="max-w-sm">
+                  <div className="mx-auto mb-3 grid place-items-center w-12 h-12 rounded-2xl bg-[var(--series-1)]/10 text-[var(--series-1)]">
+                    <PackageSearch size={22} />
+                  </div>
+                  <p className="text-sm text-[var(--ink-secondary)]">
+                    No questions yet — try a sample from the sidebar, or type your own question below.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {history.map((item, i) =>
+              item.role === "user" ? (
+                <UserBubble key={i} text={item.text} />
+              ) : (
+                <AssistantBubble key={i} response={item} />
+              )
+            )}
+
+            {loading && (
+              <div className="animate-in flex items-center gap-2 text-sm text-[var(--ink-muted)] pl-11">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" style={{ animationDelay: "0.15s" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--series-1)] pulse-dot" style={{ animationDelay: "0.3s" }} />
+                Agent is reasoning…
+              </div>
+            )}
+          </div>
+
+          {showJumpToBottom && (
+            <button
+              onClick={() => scrollToBottom()}
+              className="animate-in absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-white border border-[var(--border)] shadow-md pl-3 pr-3.5 py-2 text-[12.5px] font-semibold text-[var(--ink-secondary)] hover:text-[var(--series-1)] hover:border-[var(--series-1)] transition-colors"
+            >
+              <ArrowDown size={13} /> Jump to latest
+            </button>
           )}
         </div>
 
@@ -125,9 +178,10 @@ export default function AnalystPage() {
         >
           <div className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-2 py-1.5 focus-within:border-[var(--series-1)] transition-colors">
             <input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a business question…"
+              placeholder="Ask a business question… (press / to focus)"
               className="flex-1 bg-transparent px-2.5 py-2 text-[14px] outline-none placeholder:text-[var(--ink-muted)]"
             />
             <button

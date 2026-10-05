@@ -1,8 +1,9 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, FileText, ImagePlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, FileText, ImagePlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { errorMessage, registerCompany } from "../api";
 import { Button, Field, inputClass } from "../components/ui";
+import { useToast } from "../components/Toast";
 import AuthLayout from "./AuthLayout";
 
 const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
@@ -54,12 +55,14 @@ function validate(step, f) {
 }
 
 export default function RegisterPage() {
+  const toast = useToast();
   const [step, setStep] = useState(0);
   const [f, setF] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const setUpper = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value.toUpperCase().replace(/\s/g, "") }));
@@ -81,6 +84,7 @@ export default function RegisterPage() {
     const e = validate(step, f);
     setErrors(e);
     if (!Object.keys(e).length) setStep((s) => s + 1);
+    else toast.error("Please fix the highlighted fields before continuing.");
   }
 
   async function submit(ev) {
@@ -98,6 +102,7 @@ export default function RegisterPage() {
     try {
       await registerCompany(fd);
       setDone(true);
+      toast.success("Application submitted — we'll review it shortly.");
     } catch (err) {
       setServerError(errorMessage(err));
     } finally {
@@ -236,10 +241,16 @@ export default function RegisterPage() {
             </Field>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Password" error={errors.admin_password}>
-                <input className={inputClass} type="password" autoComplete="new-password" value={f.admin_password} onChange={set("admin_password")} />
+                <div className="relative">
+                  <input className={`${inputClass} pr-10`} type={showPw ? "text" : "password"} autoComplete="new-password" value={f.admin_password} onChange={set("admin_password")} />
+                  <button type="button" tabIndex={-1} onClick={() => setShowPw((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)] hover:text-[var(--ink-secondary)] transition-colors">
+                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </Field>
               <Field label="Confirm password" error={errors.confirm_password}>
-                <input className={inputClass} type="password" autoComplete="new-password" value={f.confirm_password} onChange={set("confirm_password")} />
+                <input className={inputClass} type={showPw ? "text" : "password"} autoComplete="new-password" value={f.confirm_password} onChange={set("confirm_password")} />
               </Field>
             </div>
           </>

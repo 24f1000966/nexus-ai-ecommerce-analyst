@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -61,3 +61,30 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(60))
     note: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class CompanyDataset(Base):
+    """One uploaded CSV per (company, analytics table). Stored in the DB, not on disk."""
+    __tablename__ = "company_datasets"
+    __table_args__ = (UniqueConstraint("company_id", "table_name"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    table_name: Mapped[str] = mapped_column(String(30))       # customers | products | orders | order_items
+    filename: Mapped[str] = mapped_column(String(200))
+    row_count: Mapped[int] = mapped_column(Integer)
+    csv_data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)   # normalised CSV
+    uploaded_by: Mapped[str] = mapped_column(String(200))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class KnowledgeDoc(Base):
+    """A company's own policy / FAQ document, searched by the RAG retriever."""
+    __tablename__ = "knowledge_docs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    content: Mapped[str] = mapped_column(Text)
+    uploaded_by: Mapped[str] = mapped_column(String(200))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

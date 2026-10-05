@@ -6,6 +6,18 @@
       "runtimeExecutable": "streamlit",
       "runtimeArgs": ["run", "streamlit_app.py", "--server.headless", "true"],
       "port": 8501
+    },
+    {
+      "name": "api-verify",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.12", "-c", "import os; os.environ['DATABASE_URL']='sqlite:///C:/Users/KIIT0001/AppData/Local/Temp/claude/D--PPD-II-PPD2-Ecommerce-AI-Analyst/1449ddef-ecf2-4c77-a4d7-658cce90daf2/scratchpad/verify.db'; import uvicorn; uvicorn.run('backend.main:api', host='127.0.0.1', port=8000)"],
+      "port": 8000
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
     }
   ]
 }

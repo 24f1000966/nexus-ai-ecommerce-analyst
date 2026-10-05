@@ -1,6 +1,7 @@
-import { BarChart3, LogOut, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, Database, LogOut, ShieldCheck, Users } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import Footer from "./Footer";
 import { CompanyLogo } from "./ui";
 
 const ROLE_LABEL = { super_admin: "Super Admin", company_admin: "Company Admin", member: "Member" };
@@ -13,7 +14,10 @@ export default function AppShell() {
   const links = [];
   if (user.role === "super_admin") links.push({ to: "/admin", label: "Companies", icon: ShieldCheck });
   if (approved) links.push({ to: "/dashboard", label: "Analyst", icon: BarChart3 });
-  if (approved && user.role === "company_admin") links.push({ to: "/team", label: "Team", icon: Users });
+  if (approved && user.role === "company_admin") {
+    links.push({ to: "/data", label: "Data", icon: Database });
+    links.push({ to: "/team", label: "Team", icon: Users });
+  }
 
   return (
     <div className="h-screen flex flex-col">
@@ -62,8 +66,11 @@ export default function AppShell() {
           </button>
         </div>
       </nav>
-      <div className="flex-1 min-h-0">
-        <Outlet />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0">
+          <Outlet />
+        </div>
+        <Footer compact />
       </div>
     </div>
   );
