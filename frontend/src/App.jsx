@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import StatusPage from "./pages/StatusPage";
 import TeamPage from "./pages/TeamPage";
+import UsagePage from "./pages/UsagePage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
 
             <Route element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route path="/admin" element={<RequireAuth roles={["super_admin"]}><AdminPage /></RequireAuth>} />
+              <Route path="/admin/usage" element={<RequireAuth roles={["super_admin"]}><UsagePage /></RequireAuth>} />
               <Route path="/status" element={<StatusPage />} />
               <Route path="/dashboard" element={<RequireAuth roles={["company_admin", "member"]} needApproved><AnalystPage /></RequireAuth>} />
               <Route path="/data" element={<RequireAuth roles={["company_admin"]} needApproved><DataPage /></RequireAuth>} />

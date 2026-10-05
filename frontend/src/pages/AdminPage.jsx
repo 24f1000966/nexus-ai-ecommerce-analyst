@@ -1,20 +1,32 @@
 import {
-  Activity, AlertTriangle, CheckCircle2, Check, Copy, Database, ExternalLink, FileText,
-  Globe, Mail, MapPin, MessageCircle, ShieldAlert, Users2, X, XCircle,
+  Activity, AlertTriangle, CheckCircle2, Check, CircleSlash, Clock, Copy, Database, ExternalLink,
+  FileText, Globe, Mail, MapPin, MessageCircle, Search, ShieldAlert, Users2, X, XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { decideCompany, errorMessage, getAdminCompanies, getAdminStats, getCompanyReview, getPlatformHealth, openLetter } from "../api";
 import { Button, Card, CompanyLogo, StatusPill } from "../components/ui";
 import { useToast } from "../components/Toast";
 
 const FILTERS = [["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["suspended", "Suspended"], ["", "All"]];
 const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const DAY_MS = 86_400_000;
+
+function dataFreshness(c) {
+  if (!c.data_uploaded_at) return { text: "No data uploaded", tone: "muted" };
+  const days = Math.floor((Date.now() - new Date(c.data_uploaded_at).getTime()) / DAY_MS);
+  const text = days <= 0 ? "Updated today" : days === 1 ? "Updated 1 day ago" : `Updated ${days} days ago`;
+  return { text, tone: c.data_stale ? "warn" : "good" };
+}
 
 export default function AdminPage() {
+  const toast = useToast();
   const [stats, setStats] = useState(null);
   const [health, setHealth] = useState(null);
   const [filter, setFilter] = useState("pending");
   const [companies, setCompanies] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
 
@@ -30,6 +42,44 @@ export default function AdminPage() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setSelectedIds(new Set()); setSearch(""); }, [filter]);
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) =>
+      [c.name, c.applicant, c.md_name].some((v) => v?.toLowerCase().includes(q)));
+  }, [companies, search]);
+
+  const canBulkApprove = filter === "pending";
+  const allVisibleSelected = canBulkApprove && visible.length > 0 && visible.every((c) => selectedIds.has(c.id));
+
+  function toggleOne(id, e) {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelectedIds(allVisibleSelected ? new Set() : new Set(visible.map((c) => c.id)));
+  }
+
+  async function bulkApprove() {
+    const ids = [...selectedIds];
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => decideCompany(id, "approve")));
+    const okCount = results.filter((r) => r.status === "fulfilled").length;
+    const failCount = results.length - okCount;
+    setBulkBusy(false);
+    setSelectedIds(new Set());
+    await load();
+    if (failCount === 0) toast.success(`Approved ${okCount} compan${okCount === 1 ? "y" : "ies"}.`);
+    else toast.error(`Approved ${okCount}, ${failCount} failed — check them individually.`);
+  }
 
   const cards = [
     ["pending", "Awaiting review", "#b06b00"], ["approved", "Approved companies", "var(--status-good)"],
@@ -61,43 +111,87 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="flex gap-1 mt-6 mb-3 rounded-xl bg-white border border-[var(--border)] p-1 w-fit">
-          {FILTERS.map(([key, label]) => (
-            <button key={label} onClick={() => setFilter(key)}
-              className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition ${filter === key ? "bg-[var(--series-1)] text-white" : "text-[var(--ink-secondary)] hover:bg-[var(--page)]"}`}>
-              {label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3 mt-6 mb-3">
+          <div className="flex gap-1 rounded-xl bg-white border border-[var(--border)] p-1 w-fit">
+            {FILTERS.map(([key, label]) => (
+              <button key={label} onClick={() => setFilter(key)}
+                className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition ${filter === key ? "bg-[var(--series-1)] text-white" : "text-[var(--ink-secondary)] hover:bg-[var(--page)]"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search company, applicant or MD…"
+              className="w-full rounded-xl border border-[var(--border)] bg-white pl-8 pr-3 py-2 text-[13px] outline-none focus:border-[var(--series-1)] transition-colors"
+            />
+          </div>
         </div>
 
         {error && <div className="mb-3 rounded-xl bg-[var(--status-critical-bg)] text-[var(--status-critical)] text-sm px-3.5 py-2.5">{error}</div>}
 
+        {selectedIds.size > 0 && (
+          <div className="animate-in mb-3 flex items-center gap-3 rounded-xl bg-[var(--series-1)]/8 border border-[var(--series-1)]/25 px-4 py-2.5">
+            <span className="text-[13px] font-semibold text-[var(--series-1)]">{selectedIds.size} selected</span>
+            <Button variant="success" loading={bulkBusy} onClick={bulkApprove} className="!py-1.5 !px-3 text-[12.5px]">
+              <CheckCircle2 size={14} /> Approve selected
+            </Button>
+            <button onClick={() => setSelectedIds(new Set())} className="text-[12.5px] font-semibold text-[var(--ink-muted)] hover:text-[var(--ink-secondary)]">
+              Clear
+            </button>
+          </div>
+        )}
+
         <Card className="overflow-hidden">
-          {companies.length === 0 ? (
-            <div className="py-16 text-center text-sm text-[var(--ink-muted)]">No companies in this view.</div>
+          {visible.length === 0 ? (
+            <div className="py-16 text-center text-sm text-[var(--ink-muted)]">
+              {companies.length === 0 ? "No companies in this view." : "No companies match your search."}
+            </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left bg-[var(--page)] text-[12px] text-[var(--ink-secondary)]">
+                  {canBulkApprove && (
+                    <th className="px-4 py-2.5 w-8">
+                      <input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} onClick={(e) => e.stopPropagation()} />
+                    </th>
+                  )}
                   <th className="px-4 py-2.5 font-semibold">Company</th>
                   <th className="px-4 py-2.5 font-semibold">Applicant</th>
-                  <th className="px-4 py-2.5 font-semibold">MD</th>
+                  <th className="px-4 py-2.5 font-semibold">Data</th>
                   <th className="px-4 py-2.5 font-semibold">Submitted</th>
                   <th className="px-4 py-2.5 font-semibold">Status</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {companies.map((c) => (
-                  <tr key={c.id} className="border-t border-[var(--border)] hover:bg-[var(--page)]/60 cursor-pointer" onClick={() => setSelected(c.id)}>
-                    <td className="px-4 py-3"><div className="flex items-center gap-3"><CompanyLogo company={c} size={34} /><span className="font-semibold">{c.name}</span></div></td>
-                    <td className="px-4 py-3 text-[var(--ink-secondary)]">{c.applicant}</td>
-                    <td className="px-4 py-3 text-[var(--ink-secondary)]">{c.md_name}</td>
-                    <td className="px-4 py-3 text-[var(--ink-secondary)] tabular-nums">{fmtDate(c.created_at)}</td>
-                    <td className="px-4 py-3"><StatusPill status={c.status} /></td>
-                    <td className="px-4 py-3 text-right"><span className="text-[13px] font-semibold text-[var(--series-1)]">Review →</span></td>
-                  </tr>
-                ))}
+                {visible.map((c) => {
+                  const fresh = dataFreshness(c);
+                  const FreshIcon = fresh.tone === "muted" ? CircleSlash : fresh.tone === "warn" ? AlertTriangle : Clock;
+                  return (
+                    <tr key={c.id} className="border-t border-[var(--border)] hover:bg-[var(--page)]/60 cursor-pointer" onClick={() => setSelected(c.id)}>
+                      {canBulkApprove && (
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <input type="checkbox" checked={selectedIds.has(c.id)} onChange={(e) => toggleOne(c.id, e)} />
+                        </td>
+                      )}
+                      <td className="px-4 py-3"><div className="flex items-center gap-3"><CompanyLogo company={c} size={34} /><span className="font-semibold">{c.name}</span></div></td>
+                      <td className="px-4 py-3 text-[var(--ink-secondary)]">{c.applicant}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 text-[12px] font-medium ${
+                          fresh.tone === "warn" ? "text-[#b06b00]" : fresh.tone === "good" ? "text-[var(--ink-secondary)]" : "text-[var(--ink-muted)]"}`}>
+                          <FreshIcon size={12} /> {fresh.text}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--ink-secondary)] tabular-nums">{fmtDate(c.created_at)}</td>
+                      <td className="px-4 py-3"><StatusPill status={c.status} /></td>
+                      <td className="px-4 py-3 text-right"><span className="text-[13px] font-semibold text-[var(--series-1)]">Review →</span></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

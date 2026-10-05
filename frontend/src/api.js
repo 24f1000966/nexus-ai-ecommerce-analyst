@@ -49,6 +49,7 @@ export const registerCompany = (formData) => data(client.post("/auth/register-co
 // super admin
 export const getAdminStats = () => data(client.get("/admin/stats"));
 export const getPlatformHealth = () => data(client.get("/admin/health"));
+export const getUsageLog = (limit = 100) => data(client.get("/admin/usage", { params: { limit } }));
 export const getAdminCompanies = (status) => data(client.get("/admin/companies", { params: status ? { status } : {} }));
 export const getCompanyReview = (id) => data(client.get(`/admin/companies/${id}`));
 export const decideCompany = (id, action, reason = "") => data(client.post(`/admin/companies/${id}/${action}`, { reason }));

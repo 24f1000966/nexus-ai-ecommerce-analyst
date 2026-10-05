@@ -15,6 +15,8 @@ from backend.verification import verification_checks
 
 router = APIRouter(prefix="/api/admin", tags=["super-admin"])
 
+DATA_STALE_DAYS = 14  # flag a company's data as stale if nothing was uploaded in this many days
+
 
 class Decision(BaseModel):
     reason: str = ""
@@ -33,6 +35,14 @@ def _has_letter(db: Session, company_id: int) -> bool:
 
 def _applicant(db: Session, company_id: int) -> User | None:
     return db.scalar(select(User).where(User.company_id == company_id, User.role == "company_admin"))
+
+
+def _as_utc(dt: datetime | None) -> datetime | None:
+    """SQLite drops tzinfo on round-trip even for DateTime(timezone=True); every datetime we
+    write is already UTC, so a naive value read back can be safely treated as UTC too."""
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 @router.get("/stats")
@@ -113,11 +123,24 @@ def list_companies(status: str | None = None, db: Session = Depends(get_db), _: 
     q = select(Company).order_by(Company.created_at.desc())
     if status:
         q = q.where(Company.status == status)
+    companies = db.scalars(q).all()
+
+    # One grouped query for every company's most recent upload, instead of one query per row.
+    last_upload = dict(db.execute(
+        select(CompanyDataset.company_id, func.max(CompanyDataset.uploaded_at)).group_by(CompanyDataset.company_id)
+    ).all())
+    stale_cutoff = datetime.now(timezone.utc) - timedelta(days=DATA_STALE_DAYS)
+
     out = []
-    for c in db.scalars(q):
+    for c in companies:
         applicant = _applicant(db, c.id)
-        out.append({**company_public(c), "created_at": c.created_at.isoformat(),
-                    "applicant": applicant.full_name if applicant else None, "md_name": c.md_name})
+        uploaded_at = _as_utc(last_upload.get(c.id))
+        out.append({
+            **company_public(c), "created_at": c.created_at.isoformat(),
+            "applicant": applicant.full_name if applicant else None, "md_name": c.md_name,
+            "data_uploaded_at": uploaded_at.isoformat() if uploaded_at else None,
+            "data_stale": bool(uploaded_at and uploaded_at < stale_cutoff),
+        })
     return out
 
 

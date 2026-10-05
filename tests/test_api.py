@@ -148,3 +148,13 @@ def test_only_super_admin_can_see_health_and_usage(client, companies):
 
     rows = client.get("/api/admin/usage", headers=companies["super"]).json()
     assert any(r["company"] == "TrendVista" for r in rows)
+
+
+def test_company_list_shows_data_freshness(client, companies):
+    rows = client.get("/api/admin/companies", headers=companies["super"]).json()
+    by_name = {r["name"]: r for r in rows}
+    # TrendVista uploaded its CSVs earlier in this module; UrbanKart never uploaded anything.
+    assert by_name["TrendVista"]["data_uploaded_at"] is not None
+    assert by_name["TrendVista"]["data_stale"] is False
+    assert by_name["UrbanKart"]["data_uploaded_at"] is None
+    assert by_name["UrbanKart"]["data_stale"] is False

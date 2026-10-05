@@ -1,4 +1,4 @@
-import { BarChart3, Database, LogOut, ShieldCheck, Users } from "lucide-react";
+import { Activity, BarChart3, Database, LogOut, ShieldCheck, Users } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Footer from "./Footer";
@@ -12,7 +12,10 @@ export default function AppShell() {
   const approved = user.company?.status === "approved";
 
   const links = [];
-  if (user.role === "super_admin") links.push({ to: "/admin", label: "Companies", icon: ShieldCheck });
+  if (user.role === "super_admin") {
+    links.push({ to: "/admin", label: "Companies", icon: ShieldCheck, end: true });
+    links.push({ to: "/admin/usage", label: "Usage", icon: Activity });
+  }
   if (approved) links.push({ to: "/dashboard", label: "Analyst", icon: BarChart3 });
   if (approved && user.role === "company_admin") {
     links.push({ to: "/data", label: "Data", icon: Database });
@@ -28,10 +31,11 @@ export default function AppShell() {
             <span className="font-extrabold tracking-tight">Nexus AI</span>
           </div>
           <div className="flex items-center gap-1">
-            {links.map(({ to, label, icon: Icon }) => (
+            {links.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
+                end={end}
                 className={({ isActive }) =>
                   `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                     isActive ? "bg-[var(--series-1)]/10 text-[var(--series-1)]" : "text-[var(--ink-secondary)] hover:bg-[var(--page)]"
