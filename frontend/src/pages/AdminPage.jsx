@@ -1,6 +1,9 @@
-import { CheckCircle2, Check, Copy, ExternalLink, FileText, Globe, Mail, MapPin, ShieldAlert, X, XCircle } from "lucide-react";
+import {
+  Activity, AlertTriangle, CheckCircle2, Check, Copy, Database, ExternalLink, FileText,
+  Globe, Mail, MapPin, MessageCircle, ShieldAlert, Users2, X, XCircle,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { decideCompany, errorMessage, getAdminCompanies, getAdminStats, getCompanyReview, openLetter } from "../api";
+import { decideCompany, errorMessage, getAdminCompanies, getAdminStats, getCompanyReview, getPlatformHealth, openLetter } from "../api";
 import { Button, Card, CompanyLogo, StatusPill } from "../components/ui";
 import { useToast } from "../components/Toast";
 
@@ -9,6 +12,7 @@ const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-IN", { day: "numer
 
 export default function AdminPage() {
   const [stats, setStats] = useState(null);
+  const [health, setHealth] = useState(null);
   const [filter, setFilter] = useState("pending");
   const [companies, setCompanies] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -16,8 +20,9 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     try {
-      const [s, c] = await Promise.all([getAdminStats(), getAdminCompanies(filter)]);
+      const [s, h, c] = await Promise.all([getAdminStats(), getPlatformHealth(), getAdminCompanies(filter)]);
       setStats(s);
+      setHealth(h);
       setCompanies(c);
     } catch (e) {
       setError(errorMessage(e));
@@ -36,6 +41,8 @@ export default function AdminPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-extrabold tracking-tight">Company verification</h1>
         <p className="text-sm text-[var(--ink-secondary)] mt-1">Review applications, verify documents, and control which companies can use Nexus AI.</p>
+
+        {health && <HealthStrip health={health} />}
 
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
@@ -98,6 +105,38 @@ export default function AdminPage() {
       </div>
 
       {selected && <ReviewDrawer id={selected} onClose={() => setSelected(null)} onChanged={load} />}
+    </div>
+  );
+}
+
+function HealthStrip({ health }) {
+  const items = [
+    { icon: MessageCircle, label: "Questions today", value: health.questions_today, sub: `${health.questions_7d} in the last 7 days` },
+    { icon: Users2, label: "Active companies (7d)", value: health.active_companies_7d, sub: `of ${health.approved_companies} approved` },
+    { icon: Database, label: "Using their own data", value: health.companies_with_data, sub: `of ${health.total_companies} companies total` },
+    {
+      icon: health.error_rate_7d > 5 ? AlertTriangle : Activity,
+      label: "Agent error rate (7d)",
+      value: `${health.error_rate_7d}%`,
+      sub: health.error_rate_7d > 5 ? "higher than usual" : "healthy",
+      warn: health.error_rate_7d > 5,
+    },
+  ];
+
+  return (
+    <div className="mt-5">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--ink-muted)] mb-2">Platform health</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {items.map(({ icon: Icon, label, value, sub, warn }) => (
+          <Card key={label} className="p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-muted)]">
+              <Icon size={13} className={warn ? "text-[var(--status-critical)]" : undefined} /> {label}
+            </div>
+            <div className={`text-2xl font-extrabold mt-1 tabular-nums ${warn ? "text-[var(--status-critical)]" : ""}`}>{value}</div>
+            <div className="text-[11.5px] text-[var(--ink-muted)] mt-0.5">{sub}</div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

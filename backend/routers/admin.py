@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -6,8 +6,9 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.db import TABLE_COLUMNS
 from backend.database import get_db
-from backend.models import AuditLog, Company, User
+from backend.models import AuditLog, Company, CompanyDataset, QuestionLog, User
 from backend.schemas import company_detail, company_public, user_public
 from backend.security import require_super_admin
 from backend.verification import verification_checks
@@ -41,6 +42,70 @@ def stats(db: Session = Depends(get_db), _: User = Depends(require_super_admin))
     counts.update({status: n for status, n in rows})
     counts["users"] = db.scalar(select(func.count()).select_from(User).where(User.role != "super_admin"))
     return counts
+
+
+@router.get("/health")
+def platform_health(db: Session = Depends(get_db), _: User = Depends(require_super_admin)):
+    """Top-of-dashboard numbers for the Super Admin: how alive is the platform right now."""
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+
+    total_companies = db.scalar(select(func.count()).select_from(Company)) or 0
+    approved_companies = db.scalar(select(func.count()).select_from(Company).where(Company.status == "approved")) or 0
+
+    questions_today = db.scalar(select(func.count()).select_from(QuestionLog)
+                                .where(QuestionLog.created_at >= today_start)) or 0
+    week_q = select(QuestionLog).where(QuestionLog.created_at >= week_ago).subquery()
+    questions_7d = db.scalar(select(func.count()).select_from(week_q)) or 0
+    failed_7d = db.scalar(select(func.count()).select_from(week_q).where(week_q.c.ok.is_(False))) or 0
+    active_companies_7d = db.scalar(
+        select(func.count(func.distinct(week_q.c.company_id))).select_from(week_q)
+    ) or 0
+
+    tables_needed = len(TABLE_COLUMNS)
+    companies_with_data = db.scalar(
+        select(func.count()).select_from(
+            select(CompanyDataset.company_id)
+            .group_by(CompanyDataset.company_id)
+            .having(func.count(func.distinct(CompanyDataset.table_name)) == tables_needed)
+            .subquery()
+        )
+    ) or 0
+
+    return {
+        "total_companies": total_companies,
+        "approved_companies": approved_companies,
+        "questions_today": questions_today,
+        "questions_7d": questions_7d,
+        "active_companies_7d": active_companies_7d,
+        "error_rate_7d": round(100 * failed_7d / questions_7d, 1) if questions_7d else 0.0,
+        "companies_with_data": companies_with_data,
+    }
+
+
+@router.get("/usage")
+def usage_log(limit: int = 50, db: Session = Depends(get_db), _: User = Depends(require_super_admin)):
+    """Recent questions across every company, newest first — for spotting what people actually ask."""
+    limit = max(1, min(limit, 200))
+    rows = db.execute(
+        select(QuestionLog, Company.name, User.full_name)
+        .join(Company, Company.id == QuestionLog.company_id)
+        .join(User, User.id == QuestionLog.user_id)
+        .order_by(QuestionLog.created_at.desc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "company": company_name,
+            "user": user_name,
+            "question": log.question,
+            "intent": log.intent,
+            "ok": log.ok,
+            "at": log.created_at.isoformat(),
+        }
+        for log, company_name, user_name in rows
+    ]
 
 
 @router.get("/companies")

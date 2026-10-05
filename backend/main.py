@@ -121,8 +121,17 @@ def ask(req: AskRequest, user: models.User = Depends(require_approved_user), db:
         raise HTTPException(400, "Question must not be empty")
     if len(question) > 500:
         raise HTTPException(422, "Question is too long (max 500 characters)")
-    with analytics_db.use_tenant(tenant_for(db, user.company_id)) as tenant:
-        resp = agent.answer(question)
+    try:
+        with analytics_db.use_tenant(tenant_for(db, user.company_id)) as tenant:
+            resp = agent.answer(question)
+    except Exception:
+        db.add(models.QuestionLog(company_id=user.company_id, user_id=user.id, question=question[:500],
+                                  intent="error", ok=False))
+        db.commit()
+        raise
+    db.add(models.QuestionLog(company_id=user.company_id, user_id=user.id, question=question[:500],
+                              intent=resp.intent, ok=True))
+    db.commit()
     return {
         "intent": resp.intent,
         "answer": resp.answer,

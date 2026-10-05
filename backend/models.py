@@ -78,6 +78,19 @@ class CompanyDataset(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class QuestionLog(Base):
+    """One row per question asked to the analyst. Powers the Super Admin's usage/health views."""
+    __tablename__ = "question_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    question: Mapped[str] = mapped_column(String(500))
+    intent: Mapped[str] = mapped_column(String(30))
+    ok: Mapped[bool] = mapped_column(Boolean, default=True)   # false if the agent raised an error
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+
+
 class KnowledgeDoc(Base):
     """A company's own policy / FAQ document, searched by the RAG retriever."""
     __tablename__ = "knowledge_docs"

@@ -123,3 +123,28 @@ def test_members_cannot_manage_data(client, companies):
     member = login(client, "ops@trendvista.in", "Member@123")
     assert client.get("/api/company/data", headers=member).status_code == 403
     assert client.post("/api/ask", json={"question": "top products"}, headers=member).status_code == 200
+
+
+def test_platform_health_counts_questions_and_data_completion(client, companies):
+    h = login(client, "cfo@trendvista.in")
+    before = client.get("/api/admin/health", headers=companies["super"]).json()
+
+    client.post("/api/ask", json={"question": "top products"}, headers=h)
+    client.post("/api/ask", json={"question": "sales trend"}, headers=h)
+
+    after = client.get("/api/admin/health", headers=companies["super"]).json()
+    assert after["questions_today"] >= before["questions_today"] + 2
+    assert after["questions_7d"] >= before["questions_7d"] + 2
+    assert after["active_companies_7d"] >= 1
+    # TrendVista uploaded all 4 tables earlier in this module; UrbanKart never did.
+    assert after["companies_with_data"] == 1
+    assert after["total_companies"] == 2
+
+
+def test_only_super_admin_can_see_health_and_usage(client, companies):
+    h = login(client, "cfo@trendvista.in")
+    assert client.get("/api/admin/health", headers=h).status_code == 403
+    assert client.get("/api/admin/usage", headers=h).status_code == 403
+
+    rows = client.get("/api/admin/usage", headers=companies["super"]).json()
+    assert any(r["company"] == "TrendVista" for r in rows)
