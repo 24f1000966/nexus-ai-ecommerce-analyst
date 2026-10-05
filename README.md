@@ -53,23 +53,27 @@ cd frontend && npm install && npm run dev   # terminal 2  -> http://localhost:51
 `backend/config.py`. In production (`NEXUS_ENV=production`) the app refuses to start unless
 `DATABASE_URL`, `NEXUS_SECRET_KEY` and `NEXUS_ADMIN_PASSWORD` are set.
 
-## Deploy on Render (free)
+## Deploy for free (Render + Neon)
 
-`render.yaml` is a Render Blueprint that creates three things, already wired together:
-`nexus-ai-api` (FastAPI), `nexus-ai-web` (the React site) and `nexus-ai-db` (Postgres).
+`render.yaml` is a Render Blueprint that creates the API (`nexus-ai-api`) and the React site
+(`nexus-ai-web`). The database is **not** provisioned by Render — use a free, permanent Postgres
+from [Neon](https://neon.tech) instead of Render's own free Postgres, which auto-expires after 30 days.
 
-1. Render Dashboard -> **New** -> **Blueprint** -> connect GitHub -> pick this repo -> **Apply**.
-2. When asked, enter `NEXUS_ADMIN_PASSWORD` (the Super Admin password, 10+ characters). The JWT secret is generated automatically and the database URL is filled in by Render.
-3. Open `https://nexus-ai-web.onrender.com` and sign in as `superadmin@nexusai.in`.
+1. **Create the database first:** sign up at [neon.tech](https://neon.tech) (free), create a project,
+   and copy its connection string (starts with `postgresql://`).
+2. Render Dashboard -> **New** -> **Blueprint** -> connect GitHub -> pick this repo -> **Apply**.
+3. When asked, paste the Neon connection string into `DATABASE_URL`, and enter
+   `NEXUS_ADMIN_PASSWORD` (the Super Admin password, 10+ characters). The JWT secret is generated automatically.
+4. Open `https://nexus-ai-web.onrender.com` and sign in as `superadmin@nexusai.in`.
 
 If Render gives a service a different address (e.g. the name was taken), set
 `VITE_API_URL` on `nexus-ai-web` to the API's address and `CORS_ORIGINS` on
 `nexus-ai-api` to the site's address, then redeploy both.
 
 Free-tier notes: the API sleeps after 15 idle minutes, so the first request afterwards takes up to a
-minute. Data lives in Postgres, so it survives sleeps and redeploys. **Render's free Postgres expires
-30 days after creation** — before that, upgrade it or point `DATABASE_URL` at another Postgres
-(Neon / Supabase). Logos and letters are stored in the database, not on disk.
+minute. Neon's free compute also auto-suspends on idle (data isn't lost, just a few seconds' delay to
+wake up) and never expires, unlike Render's own free Postgres. Logos and letters are stored in the
+database, not on disk.
 
 ### Demo script
 1. **Register a company** at `/register` (3 steps: company details -> MD & documents -> data access & admin account). Use a valid-format GSTIN/PAN/CIN, e.g. `29ABCDE1234F1Z5` / `ABCDE1234F` / `U74999KA2015PTC123456`; a logo (PNG/JPG/WebP) and any PDF as the letter.

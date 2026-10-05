@@ -1,5 +1,8 @@
 # Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
-# Creates the API, the React site and a Postgres database, wired together.
+# Creates the API and the React site. The database is NOT provisioned here —
+# use a free, permanent Postgres from Neon (neon.tech) or Supabase instead of
+# Render's own free Postgres, which auto-expires after 30 days. Paste that
+# connection string into DATABASE_URL when Render asks for it below.
 services:
   - type: web
     name: nexus-ai-api
@@ -14,9 +17,7 @@ services:
       - key: NEXUS_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: nexus-ai-db
-          property: connectionString
+        sync: false # paste your Neon/Supabase Postgres connection string here
       - key: NEXUS_SECRET_KEY
         generateValue: true
       - key: NEXUS_ADMIN_EMAIL
@@ -39,10 +40,3 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.12.0
-
-databases:
-  - name: nexus-ai-db
-    plan: free
-    databaseName: nexus
-    user: nexus
-    ipAllowList: [] # private network only: reachable from the API, not the internet
